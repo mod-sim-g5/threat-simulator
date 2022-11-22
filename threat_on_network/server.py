@@ -2,28 +2,60 @@ import math
 
 import mesa
 
-from .model import VirusOnNetwork, State, number_infected
+from .model import ThreatOnNetworkModel, ESTADO, number_infected
+
+# Configuración de represetación
 
 
 def network_portrayal(G):
-    # The model ensures there is always 1 agent per node
+    """Configuración de la represetanción de la red
+    Es el argumento que le pasamos a `mesa.visualization.NetworkModule` para configurar la represetanción visual
+
+    Returns:
+        dict : Configuración de la represetanción de la red
+    """
 
     def node_color(agent):
-        return {State.INFECTED: "#FF0000", State.SUSCEPTIBLE: "#008000"}.get(
-            agent.state, "#808080"
-        )
+        """Define el color del agente en la represetanción
+
+        Args:
+            agent (_type_): El objeto agente
+
+        Returns:
+            string : el color del angete
+        """
+        return {ESTADO.INFECTED: "#FF0000", ESTADO.SUSCEPTIBLE: "#008000"}.get(agent.state, "#808080")
 
     def edge_color(agent1, agent2):
-        if State.RESISTANT in (agent1.state, agent2.state):
+        """Color del vértice
+
+        Args:
+            agent1 (_type_): Uno de los nodos(agente)
+            agent2 (_type_): El otro nodo(agente)
+
+        Returns:
+            string : el color del vertice entre los agentes
+        """
+        if ESTADO.RESISTANT in (agent1.state, agent2.state):
             return "#000000"
         return "#e8e8e8"
 
     def edge_width(agent1, agent2):
-        if State.RESISTANT in (agent1.state, agent2.state):
+        """El grosor del vertice
+
+        Args:
+            agent1 (_type_): Uno de los nodos(agente)
+            agent2 (_type_): El otro nodo(agente)
+
+        Returns:
+            int : grosor del vértice
+        """
+        if ESTADO.RESISTANT in (agent1.state, agent2.state):
             return 3
         return 2
 
     def get_agents(source, target):
+        """Para mapear los agentes en G.edges"""
         return G.nodes[source]["agent"][0], G.nodes[target]["agent"][0]
 
     portrayal = dict()
@@ -49,8 +81,13 @@ def network_portrayal(G):
     return portrayal
 
 
-network = mesa.visualization.NetworkModule(network_portrayal, 500, 500)
-chart = mesa.visualization.ChartModule(
+# Para visualizar el modelo en una gráfica de red
+# https://mesa.readthedocs.io/en/main/mesa.visualization.modules.html#module-mesa.visualization.modules.NetworkVisualization
+networkModule = mesa.visualization.NetworkModule(
+    network_portrayal, 500, 500)
+
+# Para visualizar los datos en una gráfica
+chartModule = mesa.visualization.ChartModule(
     [
         {"Label": "Infected", "Color": "#FF0000"},
         {"Label": "Susceptible", "Color": "#008000"},
@@ -58,7 +95,7 @@ chart = mesa.visualization.ChartModule(
     ]
 )
 
-
+# Para mostrar un texto
 def get_resistant_susceptible_ratio(model):
     ratio = model.resistant_susceptible_ratio()
     ratio_text = "&infin;" if ratio is math.inf else f"{ratio:.2f}"
@@ -69,26 +106,9 @@ def get_resistant_susceptible_ratio(model):
     )
 
 
+# Parámetros para `ModularServer`
+# https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
 model_params = {
-    "num_nodes": mesa.visualization.Slider(
-        "Number of agents",
-        10,
-        10,
-        100,
-        1,
-        description="Choose how many agents to include in the model",
-    ),
-    "avg_node_degree": mesa.visualization.Slider(
-        "Avg Node Degree", 3, 3, 8, 1, description="Avg Node Degree"
-    ),
-    "initial_outbreak_size": mesa.visualization.Slider(
-        "Initial Outbreak Size",
-        1,
-        1,
-        10,
-        1,
-        description="Initial Outbreak Size",
-    ),
     "virus_spread_chance": mesa.visualization.Slider(
         "Virus Spread Chance",
         0.4,
@@ -124,10 +144,16 @@ model_params = {
     ),
 }
 
+# https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
 server = mesa.visualization.ModularServer(
-    VirusOnNetwork,
-    [network, get_resistant_susceptible_ratio, chart],
-    "Virus Model",
-    model_params,
+    ThreatOnNetworkModel,                   # Modelo
+    [                                       # Lista de modulos de visualización a mostrar
+        networkModule, 
+        get_resistant_susceptible_ratio, 
+        chartModule
+    ],
+    "Modelo de amenaza en red corporativa", # Titulo
+    model_params,                           # Parámetros del modelo
 )
+# Puerto de virualización HTML
 server.port = 8521

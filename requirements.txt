@@ -1,1 +1,8 @@
 networkx>=2.0
+dash
+pandas
+netgraph
+chart-studio
+mpld3
+dash_cytoscape
+colour

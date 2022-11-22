@@ -5,7 +5,7 @@ import networkx as nx
 import mesa
 
 
-class State(Enum):
+class ESTADO(Enum):
     SUSCEPTIBLE = 0
     INFECTED = 1
     RESISTANT = 2
@@ -16,44 +16,57 @@ def number_state(model, state):
 
 
 def number_infected(model):
-    return number_state(model, State.INFECTED)
+    return number_state(model, ESTADO.INFECTED)
 
 
 def number_susceptible(model):
-    return number_state(model, State.SUSCEPTIBLE)
+    return number_state(model, ESTADO.SUSCEPTIBLE)
 
 
 def number_resistant(model):
-    return number_state(model, State.RESISTANT)
+    return number_state(model, ESTADO.RESISTANT)
 
-
-class VirusOnNetwork(mesa.Model):
+# Modelo
+class ThreatOnNetworkModel(mesa.Model):
     """A virus model with some number of agents"""
 
     def __init__(
-        self,
-        num_nodes=10,
-        avg_node_degree=3,
-        initial_outbreak_size=1,
+        self,        
         virus_spread_chance=0.4,
         virus_check_frequency=0.4,
         recovery_chance=0.3,
         gain_resistance_chance=0.5,
     ):
-
-        self.num_nodes = num_nodes
+        """
         prob = avg_node_degree / self.num_nodes
         self.G = nx.erdos_renyi_graph(n=self.num_nodes, p=prob)
+        #self.G = nx.house_x_graph()
+        #"""
+        G = nx.Graph()
+        G.add_edge(0, 1)
+        G.add_edge(0, 2)
+        G.add_edge(0, 4)
+        G.add_edge(1, 2)
+        G.add_edge(2, 3)
+        G.add_edge(3, 4)        
+        G.add_edge(4, 5)             
+            
+        self.num_nodes = G.number_of_nodes() 
+        self.G = G  
+        #"""
+
+        print(self.G )
+
         self.grid = mesa.space.NetworkGrid(self.G)
         self.schedule = mesa.time.RandomActivation(self)
-        self.initial_outbreak_size = (
-            initial_outbreak_size if initial_outbreak_size <= num_nodes else num_nodes
-        )
+        
+        self.initial_outbreak_size = 1
         self.virus_spread_chance = virus_spread_chance
         self.virus_check_frequency = virus_check_frequency
         self.recovery_chance = recovery_chance
         self.gain_resistance_chance = gain_resistance_chance
 
+        # Para la gráfica
         self.datacollector = mesa.DataCollector(
             {
                 "Infected": number_infected,
@@ -62,33 +75,37 @@ class VirusOnNetwork(mesa.Model):
             }
         )
 
-        # Create agents
+        # Crear agentes
         for i, node in enumerate(self.G.nodes()):
+            print(str(node) + ": ", end='')
+
             a = VirusAgent(
                 i,
                 self,
-                State.SUSCEPTIBLE,
+                ESTADO.SUSCEPTIBLE,
                 self.virus_spread_chance,
                 self.virus_check_frequency,
                 self.recovery_chance,
                 self.gain_resistance_chance,
             )
             self.schedule.add(a)
+            print(a)
             # Add the agent to the node
             self.grid.place_agent(a, node)
 
         # Infect some nodes
         infected_nodes = self.random.sample(list(self.G), self.initial_outbreak_size)
+        print(infected_nodes)
         for a in self.grid.get_cell_list_contents(infected_nodes):
-            a.state = State.INFECTED
+            a.state = ESTADO.INFECTED
 
         self.running = True
         self.datacollector.collect(self)
 
     def resistant_susceptible_ratio(self):
         try:
-            return number_state(self, State.RESISTANT) / number_state(
-                self, State.SUSCEPTIBLE
+            return number_state(self, ESTADO.RESISTANT) / number_state(
+                self, ESTADO.SUSCEPTIBLE
             )
         except ZeroDivisionError:
             return math.inf
@@ -128,33 +145,33 @@ class VirusAgent(mesa.Agent):
         susceptible_neighbors = [
             agent
             for agent in self.model.grid.get_cell_list_contents(neighbors_nodes)
-            if agent.state is State.SUSCEPTIBLE
+            if agent.state is ESTADO.SUSCEPTIBLE
         ]
         for a in susceptible_neighbors:
             if self.random.random() < self.virus_spread_chance:
-                a.state = State.INFECTED
+                a.state = ESTADO.INFECTED
 
     def try_gain_resistance(self):
         if self.random.random() < self.gain_resistance_chance:
-            self.state = State.RESISTANT
+            self.state = ESTADO.RESISTANT
 
     def try_remove_infection(self):
         # Try to remove
         if self.random.random() < self.recovery_chance:
             # Success
-            self.state = State.SUSCEPTIBLE
+            self.state = ESTADO.SUSCEPTIBLE
             self.try_gain_resistance()
         else:
             # Failed
-            self.state = State.INFECTED
+            self.state = ESTADO.INFECTED
 
     def try_check_situation(self):
         if self.random.random() < self.virus_check_frequency:
             # Checking...
-            if self.state is State.INFECTED:
+            if self.state is ESTADO.INFECTED:
                 self.try_remove_infection()
 
     def step(self):
-        if self.state is State.INFECTED:
+        if self.state is ESTADO.INFECTED:
             self.try_to_infect_neighbors()
         self.try_check_situation()
