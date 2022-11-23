@@ -1,4 +1,4 @@
-networkx>=2.0
+networkx
 dash
 pandas
 netgraph

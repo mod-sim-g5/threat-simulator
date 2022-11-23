@@ -24,7 +24,8 @@ def network_portrayal(G):
         Returns:
             string : el color del angete
         """
-        return {ESTADO.INFECTED: "#FF0000", ESTADO.SUSCEPTIBLE: "#008000"}.get(agent.state, "#808080")
+        print(agent.estado)
+        return {ESTADO.INFECTADO: "#FF0000", ESTADO.SUSCEPTIBLE: "#008000"}.get(agent.estado, "#808080")
 
     def edge_color(agent1, agent2):
         """Color del vértice
@@ -36,12 +37,12 @@ def network_portrayal(G):
         Returns:
             string : el color del vertice entre los agentes
         """
-        if ESTADO.RESISTANT in (agent1.state, agent2.state):
+        if ESTADO.RESISTENTE in (agent1.estado, agent2.estado):
             return "#000000"
         return "#e8e8e8"
 
     def edge_width(agent1, agent2):
-        """El grosor del vertice
+        """El grosor del vertice 
 
         Args:
             agent1 (_type_): Uno de los nodos(agente)
@@ -50,7 +51,7 @@ def network_portrayal(G):
         Returns:
             int : grosor del vértice
         """
-        if ESTADO.RESISTANT in (agent1.state, agent2.state):
+        if ESTADO.RESISTENTE in (agent1.estado, agent2.estado):
             return 3
         return 2
 
@@ -58,12 +59,15 @@ def network_portrayal(G):
         """Para mapear los agentes en G.edges"""
         return G.nodes[source]["agent"][0], G.nodes[target]["agent"][0]
 
+    def node_size(agent):
+        return 6
+
     portrayal = dict()
     portrayal["nodes"] = [
         {
-            "size": 6,
+            "size": node_size(agents[0]),
             "color": node_color(agents[0]),
-            "tooltip": f"id: {agents[0].unique_id}<br>state: {agents[0].state.name}",
+            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].tipo}<br>state: {agents[0].estado.name}",
         }
         for (_, agents) in G.nodes.data("agent")
     ]
@@ -109,32 +113,32 @@ def get_resistant_susceptible_ratio(model):
 # Parámetros para `ModularServer`
 # https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
 model_params = {
-    "virus_spread_chance": mesa.visualization.Slider(
-        "Virus Spread Chance",
+    "probabilidad_propagacion": mesa.visualization.Slider(
+        "Probabilidad de propagacion",
         0.4,
         0.0,
         1.0,
         0.1,
         description="Probability that susceptible neighbor will be infected",
     ),
-    "virus_check_frequency": mesa.visualization.Slider(
-        "Virus Check Frequency",
+    "frecuencia_chequeo": mesa.visualization.Slider(
+        "frecuencia de chequeo",
         0.4,
         0.0,
         1.0,
         0.1,
         description="Frequency the nodes check whether they are infected by " "a virus",
     ),
-    "recovery_chance": mesa.visualization.Slider(
-        "Recovery Chance",
+    "probabilidad_recuperacion": mesa.visualization.Slider(
+        "Probabilidad de recuperacion",
         0.3,
         0.0,
         1.0,
         0.1,
         description="Probability that the virus will be removed",
     ),
-    "gain_resistance_chance": mesa.visualization.Slider(
-        "Gain Resistance Chance",
+    "probabilidad_ganar_resistencia": mesa.visualization.Slider(
+        "Probabilidad de ganar resistencia",
         0.5,
         0.0,
         1.0,
