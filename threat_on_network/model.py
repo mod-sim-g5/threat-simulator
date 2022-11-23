@@ -196,6 +196,7 @@ class ThreatOnNetworkModel(mesa.Model):
                     self.frecuencia_chequeo,
                     self.probabilidad_recuperacion,
                     self.probabilidad_ganar_resistencia,
+                    INFECCION.INFECTADO if int(self.G.nodes(data=True)[node]['infectado']) == 1 else INFECCION.SUSCEPTIBLE,
                 )
             self.schedule.add(agente)
             # Agegar el objeto agente como atributo al nodo nodo

@@ -158,7 +158,6 @@ class AgenteProceso(mesa.Agent):
         self.etiqueta = etiqueta
         self.estado = estado_inicial
         self.aporte = float(aporte)
-        self.produccion = 1
 
     def get_aporte(self):
         return self.get_produccion() * self.aporte 
@@ -167,9 +166,12 @@ class AgenteProceso(mesa.Agent):
         """promedio de disponibilidad porcentual de los activos TI dependientes"""
         nodos_vecinos = self.model.grid.get_neighbors(self.pos, include_center=False)
         activos_dependencia = [ 
-            agent.disponibilidad for agent in self.model.grid.get_cell_list_contents(nodos_vecinos) if type(agent) is AgenteActivoTI  
+            agent.disponibilidad for agent in self.model.grid.get_cell_list_contents(nodos_vecinos) if issubclass(type(agent),AgenteActivoTI)  
         ]         
-        if len(activos_dependencia)==0: return 0
+        print(self.etiqueta,end="")
+        print(activos_dependencia)
+        if len(activos_dependencia)==0:             
+            return 0
         else: return sum(activos_dependencia) / len(activos_dependencia)
 
 
