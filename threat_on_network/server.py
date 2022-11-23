@@ -41,7 +41,7 @@ def network_portrayal(G):
         tipo = agent.tipo
         if (tipo=='computo'):       return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#FFFF00"}.get(estado, "#808080")
         if (tipo=='LAN'):           return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#EE8800"}.get(estado, "#808080")
-        if (tipo=='informacion'):   return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDDD00"}.get(estado, "#808080")
+        if (tipo=='informacion'):   return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDAA00"}.get(estado, "#808080")
         if (tipo=='enrutamiento'):  return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDBB00"}.get(estado, "#808080")
         if (tipo=='aplicacion'):    return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#888800"}.get(estado, "#808080")
 
@@ -90,7 +90,7 @@ def network_portrayal(G):
             "color": color_activoTI(agents[0]),
             "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].etiqueta}<br>Confidencialidad:{agents[0].confidencialidad}<br>Integridad:{agents[0].integridad}<br>Disponibilidad:{agents[0].disponibilidad}<br>state: {agents[0].estado.name}",
         }
-        for (_, agents) in G.nodes.data("agent") if type(agents[0]) is AgenteActivoTI]
+        for (_, agents) in G.nodes.data("agent") if issubclass(type(agents[0]),AgenteActivoTI)]
 
     procesos = [{
             "size": node_size(agents[0]),

@@ -15,12 +15,12 @@ class AgenteActivoTI(mesa.Agent):
         self,
         id,
         model,
-        etiqueta,
-        tipo,        
-        probabilidad_propagacion,
-        frecuencia_chequeo,
-        probabilidad_recuperacion,
-        probabilidad_ganar_resistencia,
+        etiqueta=id,
+        tipo='computo',        
+        probabilidad_propagacion=0.4,
+        frecuencia_chequeo=0.4,
+        probabilidad_recuperacion=0.2,
+        probabilidad_ganar_resistencia=0.1,
         estado_inicial=INFECCION.SUSCEPTIBLE,        
         protocolo_infectable=0,
     ):
@@ -88,26 +88,29 @@ class AgenteComputo(AgenteActivoTI):
         self,
         id,
         model,
-        etiqueta,
-        tipo,
-        estado_inicial,
-        probabilidad_propagacion,
-        frecuencia_chequeo,
-        probabilidad_recuperacion,
-        probabilidad_ganar_resistencia,
+        etiqueta=id,          
+        probabilidad_propagacion=0.4,
+        frecuencia_chequeo=0.4,
+        probabilidad_recuperacion=0.2,
+        probabilidad_ganar_resistencia=0.1,
+        estado_inicial=INFECCION.SUSCEPTIBLE,        
+        protocolo_infectable=0,        
+    
     ):
         super().__init__(
-            self,
             id,
             model,
             etiqueta,
-            tipo,
-            estado_inicial,
+            'computo',
             probabilidad_propagacion,
             frecuencia_chequeo,
             probabilidad_recuperacion,
-            probabilidad_ganar_resistencia            
+            probabilidad_ganar_resistencia,
+            estado_inicial,
+            protocolo_infectable 
         )    
+    def step(self):
+        self.schedule.step()        
 
 class AgenteInformacion(mesa.Agent):
     def __init__(
@@ -142,6 +145,9 @@ class AgenteInformacion(mesa.Agent):
         self.probabilidad_recuperacion = probabilidad_recuperacion
         self.probabilidad_ganar_resistencia = probabilidad_ganar_resistencia  
 
+    def step(self):
+        self.schedule.step()        
+
 
 class AgenteProceso(mesa.Agent):
     def __init__(
@@ -155,7 +161,7 @@ class AgenteProceso(mesa.Agent):
         super().__init__(id, model)
         self.etiqueta = etiqueta
         self.estado = estado_inicial
-        self.aporte = aporte
+        self.aporte = float(aporte)
         self.produccion = 1
 
     def get_aporte(self):
@@ -168,6 +174,11 @@ class AgenteProceso(mesa.Agent):
         ]         
         if len(activos_dependencia)==0: return 0
         else: return sum(activos_dependencia) / len(activos_dependencia)
+
+    def step(self):
+        self.schedule.step()
+
+
 # Usuarios
 # Información y datos
 # Aplicación

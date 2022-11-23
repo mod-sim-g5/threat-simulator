@@ -7,12 +7,18 @@ import mesa
 
 from .agents import *
 
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
+
 
 def number_state(model, estado):
+    """cacula el numero de nodos con estado"""
     return sum(1 for a in model.grid.get_all_cell_contents() if type(a) is AgenteActivoTI and a.estado is estado)
 
 
 def tasa_ganancia(model):
+    """suma la tasa actual de produccion"""
     return sum(a.get_aporte() for a in model.grid.get_all_cell_contents() if type(a) is AgenteProceso and a.estado is PRODUCCION.CORRIENDO)
 
 
@@ -27,29 +33,64 @@ def number_susceptible(model):
 def number_resistant(model):
     return number_state(model, INFECCION.RESISTENTE)
 
+def calcular_numero_nodos():
+    return 0
 
 def cargar_nodos(G, file):
-    nodes = pd.read_csv(file, sep='\t+')
+    nodes = pd.read_csv(file, dtype = str, sep='\t+', engine='python')
     data = nodes.set_index('nodo').to_dict('index').items()
     G.add_nodes_from(data)
     return G
 
 
 def build_graph():
+    """Construir grafo
+    ¡IMPORTANTE! que primero se agreguen los nodos y luego si se agreguen las vertices
+    se deben agregar en orden ascendente
+    """
+    # Instanciar un nuevo grafo simple
     G = nx.Graph()
-    edges = pd.read_csv('input/vertices.csv', sep='\t+')
+
+    #for i in range(11):
+        #G.add_node(i)
+
+    #nodos
+    archivos_nodos = [
+        'input/LAN.csv',
+        'input/hosts.csv',
+        'input/enrutamiento.csv',
+        'input/procesos.csv',
+        'input/informacion.csv'
+    ]
+
+    for f in archivos_nodos:
+        cargar_nodos(G, f) 
+
+
+    #vertices
+    edges = pd.read_csv('input/vertices.csv', dtype = str, sep='\t+', engine='python') 
+    edges = edges.sort_values(by=['source', 'target'])
     print(edges)
     for i in edges.index:
-        G.add_edge(int(edges['source'][i]), int(edges['target'][i]))
+        G.add_edge(str(edges['source'][i]), str(edges['target'][i]))
 
-    cargar_nodos(G, 'input/LAN.csv')
-    cargar_nodos(G, 'input/hosts.csv')
-    cargar_nodos(G, 'input/enrutamiento.csv')
-    cargar_nodos(G, 'input/procesos.csv')
-    cargar_nodos(G, 'input/informacion.csv')
+    #pp.pprint(G.nodes(data=True))
+    #pp.pprint(G.edges(data=True))
 
-    print("Grafo:")
-    print(G.nodes(data=True))
+    """
+    Para que Mesa funcione el indice y el label de cada nodo debe coincidir
+    """    
+    relabel_map = dict([ (n,int(i)) for i,n in enumerate(G.nodes())])
+    G = nx.relabel_nodes(G, relabel_map)
+    
+    print("Grafo:")    
+    pp.pprint(G.nodes(data=True))
+    pp.pprint(G.edges(data=True))
+
+    """
+    El codigo hace el grafo bien, con los nodos y vertices correctamente hasta acá
+    """
+    
     return G
 
 # Modelo
@@ -109,49 +150,64 @@ class ThreatOnNetworkModel(mesa.Model):
 
         # Crear agentes
         print("Nodos:")
-        for i, node in enumerate(self.G.nodes()):       
-            print(node)     
+        for i, node in enumerate(self.G.nodes()):   # por cada uno de los nodos en el grafo
+            """
+            Para que Mesa funcione el indice y el label de cada nodo debe coincidir
+            """          
+            print(node, end='=?')   
+            print(i, end=',')               
             print(self.G.nodes(data=True)[node])     
-            tipo = self.G.nodes(data=True)[node]['tipo']
-            etiqueta = self.G.nodes(data=True)[node]['etiqueta']
-            print(str(node)+": '"+str(etiqueta)+"' " + tipo)
-            if tipo == 'copmuto':
+            # Si no tiene atributos
+            if 'tipo' not in self.G.nodes(data=True)[node]: 
                 a = AgenteComputo(
-                    node,
+                    i, 
                     self,
-                    etiqueta,
-                    tipo,
+                    node,
                     self.probabilidad_propagacion,
                     self.frecuencia_chequeo,
                     self.probabilidad_recuperacion,
                     self.probabilidad_ganar_resistencia,
-                    INFECCION.INFECTADO if self.G.nodes(
-                        data=True)[node]['infectado'] == 1 else INFECCION.SUSCEPTIBLE,
-                    self.G.nodes(data=True)[node]['protocolo_infectable']
-                )
-            elif tipo == 'proceso':
-                a = AgenteProceso(
-                    node,
-                    self,
-                    etiqueta,
-                    PRODUCCION.CORRIENDO,
-                    self.G.nodes(data=True)[node]['aporte']
-                )
+                    INFECCION.SUSCEPTIBLE
+                )   
             else:
-                a = AgenteActivoTI(
-                    node,
-                    self,
-                    etiqueta,
-                    self.G.nodes(data=True)[node]['tipo'],
-                    self.probabilidad_propagacion,
-                    self.frecuencia_chequeo,
-                    self.probabilidad_recuperacion,
-                    self.probabilidad_ganar_resistencia,
-                )
+                tipo = self.G.nodes(data=True)[node]['tipo']
+                etiqueta = self.G.nodes(data=True)[node]['etiqueta']
+                
+                #print(str(node)+": '"+str(etiqueta)+"' " + tipo)
+                if tipo == 'computo':
+                    a = AgenteComputo(
+                        i,  
+                        self,
+                        etiqueta,
+                        self.probabilidad_propagacion,
+                        self.frecuencia_chequeo,
+                        self.probabilidad_recuperacion,
+                        self.probabilidad_ganar_resistencia,
+                        INFECCION.INFECTADO if int(self.G.nodes(data=True)[node]['infectado']) == 1 else INFECCION.SUSCEPTIBLE,
+                    )
+                elif tipo == 'proceso':
+                    a = AgenteProceso(
+                        i,
+                        self,
+                        etiqueta,
+                        PRODUCCION.CORRIENDO,
+                        self.G.nodes(data=True)[node]['aporte']
+                    )
+                else:
+                    a = AgenteActivoTI(
+                        i,
+                        self,
+                        etiqueta,
+                        self.G.nodes(data=True)[node]['tipo'],
+                        self.probabilidad_propagacion,
+                        self.frecuencia_chequeo,
+                        self.probabilidad_recuperacion,
+                        self.probabilidad_ganar_resistencia,
+                    )
             self.schedule.add(a)
-            # Agegar el agente al nodo
-            self.grid.place_agent(a, node)
-
+            # Agegar el objeto agente como atributo al nodo nodo
+            self.grid.place_agent(a, node) 
+    
         self.running = True
         self.datacollector.collect(self)
 
