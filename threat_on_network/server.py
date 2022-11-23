@@ -131,6 +131,7 @@ moduloGraficaInfeccion = mesa.visualization.ChartModule(
 moduloGraficaGanancia = mesa.visualization.ChartModule(
     [
         {"Label": "Ganancia", "Color": "#000000"},        
+        {"Label": "Ganancia esperada", "Color": "#888888"},     
     ]
 )
 
