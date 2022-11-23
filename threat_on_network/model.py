@@ -30,9 +30,7 @@ def number_resistant(model):
 
 def cargar_nodos(G, file):
     nodes = pd.read_csv(file, sep='\t+')
-    print(nodes)
     data = nodes.set_index('nodo').to_dict('index').items()
-    print(data)
     G.add_nodes_from(data)
     return G
 
@@ -51,10 +49,7 @@ def build_graph():
     cargar_nodos(G, 'input/informacion.csv')
 
     print("Grafo:")
-    #relabel_map = dict([ (n,int(i)) for i,n in enumerate(G.nodes())])
-    #G = nx.relabel_nodes(G, relabel_map)
     print(G.nodes(data=True))
-
     return G
 
 # Modelo
@@ -115,17 +110,14 @@ class ThreatOnNetworkModel(mesa.Model):
         # Crear agentes
         print("Nodos:")
         for i, node in enumerate(self.G.nodes()):       
-            node=int(node)
-            print(i,end=' ')
-            print(node,end=' ')
-            print(self.G.nodes(data=True)[node])                 
+            print(node)     
+            print(self.G.nodes(data=True)[node])     
             tipo = self.G.nodes(data=True)[node]['tipo']
             etiqueta = self.G.nodes(data=True)[node]['etiqueta']
-            
             print(str(node)+": '"+str(etiqueta)+"' " + tipo)
             if tipo == 'copmuto':
                 a = AgenteComputo(
-                    i,
+                    node,
                     self,
                     etiqueta,
                     tipo,
@@ -137,21 +129,9 @@ class ThreatOnNetworkModel(mesa.Model):
                         data=True)[node]['infectado'] == 1 else INFECCION.SUSCEPTIBLE,
                     self.G.nodes(data=True)[node]['protocolo_infectable']
                 )
-            elif tipo == 'informacion':
-                a = AgenteInformacion(
-                    i,
-                    self,
-                    etiqueta,
-                    tipo,
-                    INFECCION.SUSCEPTIBLE,
-                    self.probabilidad_propagacion,
-                    self.frecuencia_chequeo,
-                    self.probabilidad_recuperacion,
-                    self.probabilidad_ganar_resistencia,            
-                )            
             elif tipo == 'proceso':
                 a = AgenteProceso(
-                    i,
+                    node,
                     self,
                     etiqueta,
                     PRODUCCION.CORRIENDO,
@@ -159,7 +139,7 @@ class ThreatOnNetworkModel(mesa.Model):
                 )
             else:
                 a = AgenteActivoTI(
-                    i,
+                    node,
                     self,
                     etiqueta,
                     self.G.nodes(data=True)[node]['tipo'],
@@ -167,13 +147,11 @@ class ThreatOnNetworkModel(mesa.Model):
                     self.frecuencia_chequeo,
                     self.probabilidad_recuperacion,
                     self.probabilidad_ganar_resistencia,
-                    INFECCION.INFECTADO if self.G.nodes(
-                        data=True)[node]['infectado'] == 1 else INFECCION.SUSCEPTIBLE,
                 )
             self.schedule.add(a)
             # Agegar el agente al nodo
             self.grid.place_agent(a, node)
-        print([a.unique_id for a in self.grid.get_all_cell_contents()])
+
         self.running = True
         self.datacollector.collect(self)
 
