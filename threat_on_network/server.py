@@ -116,7 +116,7 @@ def network_portrayal(G):
 
 # Para visualizar el modelo en una gráfica de red
 # https://mesa.readthedocs.io/en/main/mesa.visualization.modules.html#module-mesa.visualization.modules.NetworkVisualization
-moduloRed = mesa.visualization.NetworkModule( network_portrayal, 500, 500)
+moduloRed = mesa.visualization.NetworkModule( network_portrayal, 700, 500)
 
 # Para visualizar los datos en una gráfica
 moduloGraficaInfeccion = mesa.visualization.ChartModule(

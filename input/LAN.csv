@@ -1,4 +1,3 @@
 nodo	tipo	etiqueta	infectado
 S1	LAN	intranet	0
 WAN	LAN	internet	0
-DMZ	LAN	DMZ			0
