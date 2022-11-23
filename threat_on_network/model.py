@@ -66,7 +66,6 @@ def build_graph():
     for f in archivos_nodos:
         cargar_nodos(G, f) 
 
-
     #vertices
     edges = pd.read_csv('input/vertices.csv', dtype = str, sep='\t+', engine='python') 
     edges = edges.sort_values(by=['source', 'target'])
@@ -74,14 +73,13 @@ def build_graph():
     for i in edges.index:
         G.add_edge(str(edges['source'][i]), str(edges['target'][i]))
 
-    pp.pprint(G.nodes(data=True))
-    pp.pprint(G.edges(data=True))
-
     """
     NetworkX:
     Hasta aquí serviría normal para liberrias como matplotlib
     Para que Mesa funcione el indice y el label de cada nodo debe coincidir
     """    
+    pp.pprint(G.nodes(data=True))
+    pp.pprint(G.edges(data=True))
     relabel_map = dict([ (n,int(i)) for i,n in enumerate(G.nodes())])
     print("Re-etiquetado: ",end="")
     print(relabel_map)
@@ -126,7 +124,7 @@ class ThreatOnNetworkModel(mesa.Model):
         self.G = build_graph()
         self.num_nodes = self.G.number_of_nodes()
 
-        # Esto es de MEsa
+        # Esto es de Mesa
         self.grid = mesa.space.NetworkGrid(self.G) #!
         self.schedule = mesa.time.RandomActivation(self) # activa cada agente en cada circlo en orden aleatorio
 
@@ -160,12 +158,13 @@ class ThreatOnNetworkModel(mesa.Model):
             int : INT
             node : int
             """          
-            print(node, end='=?')   
+            print("["+str(node)+"]", end='=?')   
             print(i, end=',')               
             print(self.G.nodes(data=True)[node])     
             tipo = self.G.nodes(data=True)[node]['tipo']
             etiqueta = self.G.nodes(data=True)[node]['etiqueta']
             
+            """Mesa crea un agente para agregarlo como atributo al nodo de NetworkX"""
             #print(str(node)+": '"+str(etiqueta)+"' " + tipo)
             if tipo == 'computo':
                 agente = AgenteComputo(
@@ -201,9 +200,13 @@ class ThreatOnNetworkModel(mesa.Model):
             self.schedule.add(agente)
             # Agegar el objeto agente como atributo al nodo nodo
             self.grid.place_agent(agente, node) 
-    
+
+        print("Agents:")
+        pp.pprint([a.etiqueta for a in self.grid.get_all_cell_contents()])
         self.running = True
         self.datacollector.collect(self)
+
+        #final consutrccion de modelo
 
     def resistant_susceptible_ratio(self):
         try:
