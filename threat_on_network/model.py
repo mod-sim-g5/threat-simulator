@@ -1,16 +1,18 @@
 import math
 
 import networkx as nx
+import matplotlib.pyplot as plt
 import pandas as pd
-
+import threading
+import multiprocessing as mp
 import mesa
 
 from .agents import *
 
 import pprint
 
-pp = pprint.PrettyPrinter(indent=4,width=1)
-
+pp = pprint.PrettyPrinter(indent=4,width=2)
+from IPython.lib.pretty import pprint
 
 def number_state(model, estado):
     """cacula el numero de nodos con estado"""
@@ -35,9 +37,6 @@ def number_susceptible(model):
 
 def number_resistant(model):
     return number_state(model, INFECCION.RESISTENTE)
-
-def calcular_numero_nodos():
-    return 0
 
 def cargar_nodos(G, file):
     nodes = pd.read_csv(file, dtype = str, sep='\t+', engine='python')
@@ -78,8 +77,6 @@ def crear_grafo():
     for f in archivos_nodos:
         cargar_nodos(G, f) 
 
-
-
     """
     NetworkX:
     Hasta aquí serviría normal para liberrias como matplotlib
@@ -94,10 +91,17 @@ def crear_grafo():
     print(relabel_map)
     
     G = nx.relabel_nodes(G, relabel_map)
+
+    
+    q = mp.Queue()
+    p = mp.Process(target=plotting_thread, args=(G,))
+    p.start()
+    
     
     print("Grafo:")    
-    pp.pprint(G.nodes(data=True)[0])
-    pp.pprint(G.edges(data=True)[0])
+    pprint(G.nodes(data=True))
+    pprint(G.edges(data=True))
+     
 
     """
     El codigo hace el grafo bien, con los nodos y vertices correctamente hasta acá
@@ -105,14 +109,10 @@ def crear_grafo():
     
     return G
 
-from threading import Thread
-from time import sleep
 
-def threaded_function(arg):
-    for i in range(arg):
-        print("running")
-        sleep(1)
-
+def plotting_thread(G,):
+    nx.draw(G,with_labels = True)
+    plt.show()
 
 # Modelo
 class ThreatOnNetworkModel(mesa.Model):
@@ -227,6 +227,8 @@ class ThreatOnNetworkModel(mesa.Model):
         pp.pprint([a.etiqueta for a in self.grid.get_all_cell_contents()])
         self.running = True
         self.datacollector.collect(self)
+
+
 
         #final consutrccion de modelo
 
