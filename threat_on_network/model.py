@@ -27,16 +27,19 @@ def tasa_ganancia_esperada(model):
     """suma la tasa actual de produccion"""
     return sum(a.aporte for a in model.grid.get_all_cell_contents() if type(a) is AgenteProceso and a.estado is PRODUCCION.CORRIENDO)
 
-def number_infected(model):
+def numero_infectados(model):
     return number_state(model, INFECCION.INFECTADO)
 
 
-def number_susceptible(model):
+def numero_vulnerables(model):
     return number_state(model, INFECCION.SUSCEPTIBLE)
 
 
-def number_resistant(model):
+def numero_resistentes(model):
     return number_state(model, INFECCION.RESISTENTE)
+
+def numero_impactados(model):
+    return number_state(model, INFECCION.IMPACTADO)
 
 def cargar_nodos(G, file):
     nodes = pd.read_csv(file, dtype = str, sep='\t+', engine='python')
@@ -67,11 +70,11 @@ def crear_grafo():
 
     #nodos
     archivos_nodos = [
+        'input/informacion.csv',
         'input/procesos.csv',
         'input/LAN.csv',
         'input/hosts.csv',
-        'input/enrutamiento.csv',        
-        'input/informacion.csv'
+        'input/enrutamiento.csv',                
     ]
 
     for f in archivos_nodos:
@@ -90,25 +93,15 @@ def crear_grafo():
     print("Re-etiquetado: ",end="")
     print(relabel_map)
     
-    G = nx.relabel_nodes(G, relabel_map)
-
-    
-    q = mp.Queue()
-    p = mp.Process(target=plotting_thread, args=(G,))
-    p.start()
-    
+    G = nx.relabel_nodes(G, relabel_map)        
     
     print("Grafo:")    
     pprint(G.nodes(data=True))
-    pprint(G.edges(data=True))
-     
-
+    pprint(G.edges(data=True))     
     """
     El codigo hace el grafo bien, con los nodos y vertices correctamente hasta acá
     """
-    
     return G
-
 
 def plotting_thread(G,):
     nx.draw(G,with_labels = True)
@@ -139,6 +132,9 @@ class ThreatOnNetworkModel(mesa.Model):
 
         # Grafo
         self.G = crear_grafo()
+        p = mp.Process(target=plotting_thread, args=(self.G,))
+        p.start()
+
         self.num_nodes = self.G.number_of_nodes()
 
         # Esto es de Mesa
@@ -149,7 +145,7 @@ class ThreatOnNetworkModel(mesa.Model):
         self.impacto_confidencialidad = impacto_confidencialidad
         self.impacto_integridad = impacto_integridad
         self.impacto_disponibilidad = impacto_disponibilidad
-        self.tipo_activo_objetivo = "informacion"
+        self.tipo_activo_objetivo = "computo"
         self.protocolo_infeccion = 80
 
         # Probalidades
@@ -161,9 +157,10 @@ class ThreatOnNetworkModel(mesa.Model):
         # Para la gráfica
         self.datacollector = mesa.DataCollector(
             {
-                "Infected": number_infected,
-                "Susceptible": number_susceptible,
-                "Resistant": number_resistant,
+                "Infectados": numero_infectados,
+                "Vulnerables": numero_vulnerables,
+                "Parchados": numero_resistentes,
+                "Impactados": numero_impactados,
                 "Ganancia": tasa_ganancia,
                 "Ganancia esperada": tasa_ganancia_esperada
             }
@@ -199,6 +196,7 @@ class ThreatOnNetworkModel(mesa.Model):
                     float(self.G.nodes(data=True)[node]['antivirus']),
                     float(self.G.nodes(data=True)[node]['costo_antivirus'])
                 )
+                
             elif tipo == 'proceso':
                 agente = AgenteProceso(
                     i,
@@ -206,7 +204,7 @@ class ThreatOnNetworkModel(mesa.Model):
                     etiqueta,
                     PRODUCCION.CORRIENDO,
                     self.G.nodes(data=True)[node]['aporte']
-                )
+                )                              
             else:
                 agente = AgenteActivoTI(
                     i,
@@ -220,6 +218,7 @@ class ThreatOnNetworkModel(mesa.Model):
                     INFECCION.INFECTADO if int(self.G.nodes(data=True)[node]['infectado']) == 1 else INFECCION.SUSCEPTIBLE,
                 )
             self.schedule.add(agente)
+            print("agente",agente)
             # Agegar el objeto agente como atributo al nodo nodo
             self.grid.place_agent(agente, node) 
 
@@ -244,6 +243,7 @@ class ThreatOnNetworkModel(mesa.Model):
         self.schedule.step()
         # collect data
         self.datacollector.collect(self)
+
 
     def run_model(self, n):
         for i in range(n):

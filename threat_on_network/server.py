@@ -2,7 +2,7 @@ import math
 
 import mesa
 
-from .model import ThreatOnNetworkModel, INFECCION, PRODUCCION, number_infected
+from .model import ThreatOnNetworkModel, INFECCION, PRODUCCION, numero_infectados
 from .agents import AgenteActivoTI, AgenteProceso
 
 # Configuración de represetación
@@ -39,9 +39,9 @@ def network_portrayal(G):
         """
         estado = agent.estado
         tipo = agent.tipo
-        if (tipo=='computo'):       return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#FFFF00"}.get(estado, "#808080")
+        if (tipo=='computo'):       return {INFECCION.IMPACTADO: "#330000", INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#FFFF00"}.get(estado, "#808080")
         if (tipo=='LAN'):           return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#EE8800"}.get(estado, "#808080")
-        if (tipo=='informacion'):   return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDAA00"}.get(estado, "#808080")
+        if (tipo=='informacion'):   return {INFECCION.IMPACTADO: "#330000", INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDAA00"}.get(estado, "#808080")
         if (tipo=='enrutamiento'):  return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDBB00"}.get(estado, "#808080")
         if (tipo=='aplicacion'):    return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#888800"}.get(estado, "#808080")
 
@@ -121,9 +121,10 @@ moduloRed = mesa.visualization.NetworkModule( network_portrayal, 700, 500)
 # Para visualizar los datos en una gráfica
 moduloGraficaInfeccion = mesa.visualization.ChartModule(
     [
-        {"Label": "Infected", "Color": "#FF0000"},
-        {"Label": "Susceptible", "Color": "#008000"},
-        {"Label": "Resistant", "Color": "#808080"},
+        {"Label": "Infectados", "Color": "#FF0000"},
+        {"Label": "Vulnerables", "Color": "#008000"},
+        {"Label": "Parchados", "Color": "#000080"},
+        {"Label": "Impactados", "Color": "#888888"},
     ]
 )
 
@@ -139,7 +140,7 @@ moduloGraficaGanancia = mesa.visualization.ChartModule(
 def get_resistant_susceptible_ratio(model):
     ratio = model.resistant_susceptible_ratio()
     ratio_text = "&infin;" if ratio is math.inf else f"{ratio:.2f}"
-    infected_text = str(number_infected(model))
+    infected_text = str(numero_infectados(model))
 
     return "Resistant/Susceptible Ratio: {}<br>Infected Remaining: {}".format(
         ratio_text, infected_text
@@ -207,7 +208,7 @@ model_params = {
         description="Impacto en la disponibilidad del activo",
     ),      
 }
-
+p = None
 # https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
 server = mesa.visualization.ModularServer(
     ThreatOnNetworkModel,                   # Modelo
