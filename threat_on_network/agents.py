@@ -108,9 +108,7 @@ class AgenteComputo(AgenteActivoTI):
             probabilidad_ganar_resistencia,
             estado_inicial,
             protocolo_infectable 
-        )    
-    def step(self):
-        self.schedule.step()        
+        )     
 
 class AgenteInformacion(mesa.Agent):
     def __init__(
@@ -144,9 +142,7 @@ class AgenteInformacion(mesa.Agent):
         self.frecuencia_chequeo = frecuencia_chequeo
         self.probabilidad_recuperacion = probabilidad_recuperacion
         self.probabilidad_ganar_resistencia = probabilidad_ganar_resistencia  
-
-    def step(self):
-        self.schedule.step()        
+  
 
 
 class AgenteProceso(mesa.Agent):
@@ -175,8 +171,6 @@ class AgenteProceso(mesa.Agent):
         if len(activos_dependencia)==0: return 0
         else: return sum(activos_dependencia) / len(activos_dependencia)
 
-    def step(self):
-        self.schedule.step()
 
 
 # Usuarios

@@ -1,9 +1,9 @@
 source	target
-C1	S1
-C2	S1
-C3	S1
+PC1	S1
+PC2	S1
 R1	S1
-INF1	C1
+INF1	PC1
 PR01	INF1
-PR01	C1
+PR01	PC1
+
 
