@@ -2,7 +2,8 @@ import math
 
 import mesa
 
-from .model import ThreatOnNetworkModel, ESTADO, number_infected
+from .model import ThreatOnNetworkModel, INFECCION, PRODUCCION, number_infected
+from .agents import AgenteActivoTI, AgenteProceso
 
 # Configuración de represetación
 
@@ -15,7 +16,7 @@ def network_portrayal(G):
         dict : Configuración de la represetanción de la red
     """
 
-    def node_color(agent):
+    def color_proceso(agent):
         """Define el color del agente en la represetanción
 
         Args:
@@ -24,8 +25,25 @@ def network_portrayal(G):
         Returns:
             string : el color del angete
         """
-        print(agent.estado)
-        return {ESTADO.INFECTADO: "#FF0000", ESTADO.SUSCEPTIBLE: "#008000"}.get(agent.estado, "#808080")
+        estado = agent.estado
+        return {PRODUCCION.PARADA: "#FF0000", PRODUCCION.CORRIENDO: "#008000"}.get(agent.estado, "#808080")    
+
+    def color_activoTI(agent):
+        """Define el color del agente en la represetanción
+
+        Args:
+            agent (_type_): El objeto agente
+
+        Returns:
+            string : el color del angete
+        """
+        estado = agent.estado
+        tipo = agent.tipo
+        if (tipo=='computo'):       return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#FFFF00"}.get(estado, "#808080")
+        if (tipo=='LAN'):           return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#EE8800"}.get(estado, "#808080")
+        if (tipo=='informacion'):   return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDDD00"}.get(estado, "#808080")
+        if (tipo=='enrutamiento'):  return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#DDBB00"}.get(estado, "#808080")
+        if (tipo=='aplicacion'):    return {INFECCION.INFECTADO: "#FF0000", INFECCION.SUSCEPTIBLE: "#888800"}.get(estado, "#808080")
 
     def edge_color(agent1, agent2):
         """Color del vértice
@@ -37,9 +55,12 @@ def network_portrayal(G):
         Returns:
             string : el color del vertice entre los agentes
         """
-        if ESTADO.RESISTENTE in (agent1.estado, agent2.estado):
+        if type(agent1) is AgenteProceso or type(agent2) is AgenteProceso:
+            return "#808000"
+        elif INFECCION.INFECTADO in (agent1.estado, agent2.estado):
+            return "#800000"
+        else:
             return "#000000"
-        return "#e8e8e8"
 
     def edge_width(agent1, agent2):
         """El grosor del vertice 
@@ -51,7 +72,7 @@ def network_portrayal(G):
         Returns:
             int : grosor del vértice
         """
-        if ESTADO.RESISTENTE in (agent1.estado, agent2.estado):
+        if INFECCION.RESISTENTE in (agent1.estado, agent2.estado):
             return 3
         return 2
 
@@ -63,14 +84,22 @@ def network_portrayal(G):
         return 6
 
     portrayal = dict()
-    portrayal["nodes"] = [
-        {
+
+    activos = [{
             "size": node_size(agents[0]),
-            "color": node_color(agents[0]),
-            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].tipo}<br>state: {agents[0].estado.name}",
+            "color": color_activoTI(agents[0]),
+            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].etiqueta}<br>Confidencialidad:{agents[0].confidencialidad}<br>Integridad:{agents[0].integridad}<br>Disponibilidad:{agents[0].disponibilidad}<br>state: {agents[0].estado.name}",
         }
-        for (_, agents) in G.nodes.data("agent")
-    ]
+        for (_, agents) in G.nodes.data("agent") if type(agents[0]) is AgenteActivoTI]
+
+    procesos = [{
+            "size": node_size(agents[0]),
+            "color": color_proceso(agents[0]),
+            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].etiqueta}<br>aporte:+${agents[0].get_aporte()}M<br>state: {agents[0].estado.name}",
+        }
+        for (_, agents) in G.nodes.data("agent") if type(agents[0]) is AgenteProceso]        
+    
+    portrayal["nodes"] = activos + procesos
 
     portrayal["edges"] = [
         {
@@ -87,15 +116,21 @@ def network_portrayal(G):
 
 # Para visualizar el modelo en una gráfica de red
 # https://mesa.readthedocs.io/en/main/mesa.visualization.modules.html#module-mesa.visualization.modules.NetworkVisualization
-networkModule = mesa.visualization.NetworkModule(
-    network_portrayal, 500, 500)
+moduloRed = mesa.visualization.NetworkModule( network_portrayal, 500, 500)
 
 # Para visualizar los datos en una gráfica
-chartModule = mesa.visualization.ChartModule(
+moduloGraficaInfeccion = mesa.visualization.ChartModule(
     [
         {"Label": "Infected", "Color": "#FF0000"},
         {"Label": "Susceptible", "Color": "#008000"},
         {"Label": "Resistant", "Color": "#808080"},
+    ]
+)
+
+# Para visualizar los datos en una gráfica
+moduloGraficaGanancia = mesa.visualization.ChartModule(
+    [
+        {"Label": "Ganancia", "Color": "#000000"},        
     ]
 )
 
@@ -112,14 +147,14 @@ def get_resistant_susceptible_ratio(model):
 
 # Parámetros para `ModularServer`
 # https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
-model_params = {
+model_params = {          
     "probabilidad_propagacion": mesa.visualization.Slider(
         "Probabilidad de propagacion",
         0.4,
         0.0,
         1.0,
         0.1,
-        description="Probability that susceptible neighbor will be infected",
+        description="Probabilidad de que el vecino susceptible sea infectado",
     ),
     "frecuencia_chequeo": mesa.visualization.Slider(
         "frecuencia de chequeo",
@@ -127,15 +162,15 @@ model_params = {
         0.0,
         1.0,
         0.1,
-        description="Frequency the nodes check whether they are infected by " "a virus",
+        description="Frecuencia con la que los nodos comprueban si están infectados por un virus",
     ),
     "probabilidad_recuperacion": mesa.visualization.Slider(
         "Probabilidad de recuperacion",
-        0.3,
+        0.0,
         0.0,
         1.0,
         0.1,
-        description="Probability that the virus will be removed",
+        description="Probabilidad de que el virus sea eliminado",
     ),
     "probabilidad_ganar_resistencia": mesa.visualization.Slider(
         "Probabilidad de ganar resistencia",
@@ -143,18 +178,43 @@ model_params = {
         0.0,
         1.0,
         0.1,
-        description="Probability that a recovered agent will become "
-        "resistant to this virus in the future",
+        description="Probabilidad de que un agente recuperado se convierta en"
+         "resistentes a este virus en el futuro",
     ),
+    "impacto_confidencialidad": mesa.visualization.Slider(
+        "Immpacto en confidenciliada",
+        0.5,
+        0.0,
+        1.0,
+        0.1,
+        description="Impacto en la confidencialidad del activo",
+    ),
+    "impacto_integridad": mesa.visualization.Slider(
+        "Impacto en integridad",
+        0.0,
+        0.0,
+        1.0,
+        0.1,
+        description="Impacto en la integridad del activo",
+    ),
+    "impacto_disponibilidad": mesa.visualization.Slider(
+        "Impacto en disponibilidad",
+        1.0,
+        0.0,
+        1.0,
+        0.1,
+        description="Impacto en la disponibilidad del activo",
+    ),      
 }
 
 # https://mesa.readthedocs.io/en/latest/mesa.visualization.html#mesa.visualization.ModularVisualization.ModularServer
 server = mesa.visualization.ModularServer(
     ThreatOnNetworkModel,                   # Modelo
     [                                       # Lista de modulos de visualización a mostrar
-        networkModule, 
+        moduloRed,         
+        moduloGraficaGanancia,
+        moduloGraficaInfeccion,        
         get_resistant_susceptible_ratio, 
-        chartModule
     ],
     "Modelo de amenaza en red corporativa", # Titulo
     model_params,                           # Parámetros del modelo

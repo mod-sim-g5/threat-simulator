@@ -1,0 +1,4 @@
+nodo	tipo		etiqueta	infectado	antivirus	costo_antivirus
+2	computo		C1		0		0.75		10
+3	computo		C2		0		0.2		0
+4	computo		C3		0		0.8		15

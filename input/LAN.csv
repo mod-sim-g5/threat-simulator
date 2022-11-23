@@ -1,0 +1,4 @@
+nodo	tipo	etiqueta	infectado
+6	LAN	intranet	0
+7	LAN	DMZ		0
+8	LAN	WAN		1
