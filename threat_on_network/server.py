@@ -88,7 +88,7 @@ def network_portrayal(G):
     activos = [{
             "size": node_size(agents[0]),
             "color": color_activoTI(agents[0]),
-            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].etiqueta}<br>Confidencialidad:{agents[0].confidencialidad}<br>Integridad:{agents[0].integridad}<br>Disponibilidad:{agents[0].disponibilidad}<br>state: {agents[0].estado.name}",
+            "tooltip": f"id: {agents[0].unique_id}<br>{agents[0].tipo}:{agents[0].etiqueta}<br>C:{agents[0].confidencialidad}<br>I:{agents[0].integridad}<br>D:{agents[0].disponibilidad}<br>state: {agents[0].estado.name}",
         }
         for (_, agents) in G.nodes.data("agent") if issubclass(type(agents[0]),AgenteActivoTI)]
 

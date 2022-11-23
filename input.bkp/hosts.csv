@@ -1,0 +1,4 @@
+nodo	tipo		etiqueta	infectado	antivirus	costo_antivirus
+PC1	computo		PC1		0		0.75		10
+PC2	computo		PC2		1		0.75		10
+PC3	computo		PC3		0		0.75		10

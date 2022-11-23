@@ -1,3 +1,4 @@
 nodo	tipo	etiqueta	infectado
-S1	LAN	intranet	0
-
+LAN06	LAN	intranet	0
+DMZ	LAN	DMZ		0
+LAN08	LAN	WAN		1

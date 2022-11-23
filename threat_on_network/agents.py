@@ -164,6 +164,7 @@ class AgenteProceso(mesa.Agent):
         return self.get_produccion() * self.aporte 
 
     def get_produccion(self):
+        """promedio de disponibilidad porcentual de los activos TI dependientes"""
         nodos_vecinos = self.model.grid.get_neighbors(self.pos, include_center=False)
         activos_dependencia = [ 
             agent.disponibilidad for agent in self.model.grid.get_cell_list_contents(nodos_vecinos) if type(agent) is AgenteActivoTI  
